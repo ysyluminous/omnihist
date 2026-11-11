@@ -159,16 +159,19 @@ export function saveConversations(db, conversations) {
 
 export function search(db, query, limit = 20) {
   const q = require_fts(query);
+  const cjk = /[\u3400-\u9fff\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]/.test(String(query || ''));
+  const open = cjk ? '' : '[';
+  const close = cjk ? '' : ']';
   return db.prepare(`
     select m.id, m.role, m.created_at, c.id as conversation_id, c.source, c.title,
-           snippet(message_fts, 0, '[', ']', '...', 16) as snippet
+           snippet(message_fts, 0, ?, ?, '...', 16) as snippet
     from message_fts
     join message m on m.id = message_fts.rowid
     join conversation c on c.id = m.conversation_id
     where message_fts match ?
     order by rank
     limit ?
-  `).all(q, limit);
+  `).all(open, close, q, limit);
 }
 
 function require_fts(query) {

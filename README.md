@@ -179,6 +179,17 @@ opencode / 其他 MCP 客户端（`mcp.json`）：
 
 ---
 
+## 深度整理：omnihist + SAG Wiki
+
+omnihist 负责把原文收齐。要做跨文档多跳检索、带引用的问答，再把对话导出成 Markdown，交给 SAG Wiki 索引：
+
+```bash
+omnihist export --all --out ~/omnihist-md
+# 在 SAG Wiki 里添加 ~/omnihist-md 和你的笔记库文件夹
+```
+
+SAG Wiki 用 SAG2（BM25 + 证据判断），建库不调 LLM、不生成 embedding，结果能回到原文位置。它同时提供 CLI 和 Agent Skill，适合把「所有对话 + 个人笔记」当成一个知识库来问。
+
 ## 它是怎么做的
 
 - **只读源文件。** 不写回任何工具，不改你的配置。

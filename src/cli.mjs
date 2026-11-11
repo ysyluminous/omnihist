@@ -117,6 +117,7 @@ function show() {
 }
 
 function doExport() {
+  if (flags.all) return exportAll();
   const id = flags._;
   if (!id) throw new Error('usage: omnihist export <conversation-id> [--format md|json] [--out file]');
   const d = db();
@@ -137,6 +138,26 @@ function doExport() {
   } else {
     console.log(body);
   }
+}
+
+function exportAll() {
+  const d = db();
+  const out = path.resolve(flags.out || 'omnihist-export');
+  const rows = listConversations(d, { limit: 100000 });
+  let n = 0;
+  for (const r of rows) {
+    const got = getConversation(d, r.id);
+    if (!got) continue;
+    const c = got.conversation;
+    const dir = path.join(out, c.source);
+    fs.mkdirSync(dir, { recursive: true });
+    const safe = c.id.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 120);
+    const body = `# ${c.title || '(untitled)'}\n\n- source: ${c.source}\n- id: ${c.id}\n- cwd: ${c.cwd || ''}\n- updated: ${c.updated_at ? new Date(Number(c.updated_at)).toISOString() : ''}\n\n` +
+      got.messages.map((m) => `## ${m.role || '?'} · ${fmt(m.created_at)}\n\n${m.text || ''}\n`).join('\n');
+    fs.writeFileSync(path.join(dir, safe + '.md'), body, 'utf8');
+    n++;
+  }
+  console.log(`exported ${n} conversations to ${out}`);
 }
 
 function doStats() {
@@ -178,6 +199,8 @@ Usage:
   omnihist show <id>                print one conversation
   omnihist export <id> [--format md|json] [--out file]
                                     export one conversation
+  omnihist export --all --out <dir>
+                                    export every conversation as Markdown (for SAG Wiki / grep)
   omnihist import <path>            import ChatGPT/Claude export JSON
   omnihist stats                    counts by tool
   omnihist mcp                      run MCP server over stdio
