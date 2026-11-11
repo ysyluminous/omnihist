@@ -1,140 +1,168 @@
-﻿# omnihist
+# omnihist
 
-**涓€涓懡浠わ紝鎶婁綘鎵€鏈?AI 宸ュ叿鐨勫璇濇敹杩涘悓涓€涓彲鎼滅储鐨勬湰鍦板簱銆?*
+**一个命令，把你所有 AI 工具的对话收进同一个可搜索的本地库。**
 
-Claude Code銆丆odex銆乷pencode銆乄orkBuddy銆丵oder銆丱penMausBot銆丟emini CLI銆丱penClaw銆丆line銆丆opilot Chat鈥︹€?瀹冧滑鍚勮嚜鎶婂巻鍙茶棌鍦ㄤ笉鍚岀殑鏂囦欢澶广€丼QLite 鍜?JSONL 閲岋紝浜掔浉鐪嬩笉瑙併€俹mnihist 鍙杩欎簺鏂囦欢锛?缁熶竴鎴愪竴濂?`浼氳瘽 鈫?娑堟伅`锛屽瓨杩涗竴涓?SQLite 鏂囦欢锛屽啀閫氳繃鍛戒护琛屽拰 MCP 浜よ繕缁欎换浣?AI銆?
+Claude Code、Codex、opencode、WorkBuddy、Qoder、OpenMausBot、DeepSeek Harness、Grok Bot、TRAE、Gemini CLI、OpenClaw、Cline、Copilot Chat……
+它们各自把历史藏在不同的文件夹、SQLite 和 JSONL 里，互相看不见。omnihist 只读这些文件，
+统一成一套 `会话 → 消息`，存进一个 SQLite 文件，再通过命令行和 MCP 交还给任何 AI。
+
 ```
-~/.claude/projects/*.jsonl      鈹?~/.workbuddy/projects/*.jsonl   鈹?opencode.db / main.sqlite       鈹溾攢鈹€鈻? ~/.omnihist/omnihist.db  鈹€鈹€鈻? omnihist search
-~/.openmausbot/messages.db      鈹?       锛圫QLite + FTS5锛?         omnihist mcp
-ChatGPT / Claude 瀵煎嚭 JSON      鈹?                                  浠绘剰 agent 鍙洖
+~/.claude/projects/*.jsonl      ┐
+~/.workbuddy/projects/*.jsonl   │
+opencode.db / main.sqlite       ├──▶  ~/.omnihist/omnihist.db  ──▶  omnihist search
+~/.openmausbot/messages.db      │        （SQLite + FTS5）          omnihist mcp
+ChatGPT / Claude 导出 JSON      ┘                                   任意 agent 召回
 ```
 
-涓嶆崲宸ュ叿锛屼笉鏀瑰伐鍏凤紝涓嶄笂浼犮€備綘鐨勫巻鍙茶繕鏄綘鐨勩€?
+不换工具，不改工具，不上传。你的历史还是你的。
+
 ---
 
-## 涓轰粈涔堝仛杩欎釜
+## 为什么做这个
 
-浣犵幇鍦ㄨ嚦灏戞湁鍥涗釜 AI 鍦ㄥ悓鏃跺共娲汇€傛瘡涓兘璁板緱鑷繁閭ｄ竴鎽婏紝鍒殑閮戒笉鐭ラ亾銆?
-- **鎵句竴涓棫缁撹**锛氬彧璁板緱"涓婂懆璺熸煇涓?AI 鑱婅繃缂撳瓨閿€庝箞瀹?锛屼絾蹇樹簡鏄摢涓伐鍏枫€佸摢涓」鐩€?- **鎹㈠伐鍏峰氨澶卞繂**锛氬湪 Codex 閲岃皟閫氱殑涓滆タ锛屾崲鍒?Claude Code 瑕侀噸鏂拌В閲婁竴閬嶃€?- **宸ュ叿浼氳嚜宸卞垹鍘嗗彶**锛欳laude Code 榛樿 30 澶╂竻涓€娆★紝閲嶈涓€娆′篃鍙兘娓呯┖銆?- **鎹㈢數鑴戝氨褰掗浂**锛氫細璇濇暎鍦ㄥ崄鍑犱釜鐩綍閲岋紝娌℃湁涓€涓湴鏂硅兘鏁翠綋鎷疯蛋銆?- **鍐崇瓥鐣欎笉涓嬫潵**锛氱湡姝ｅ€奸挶鐨勬槸"褰撴椂涓轰粈涔堣繖涔堝畾"锛屽畠鍩嬪湪鍑犱竾鏉℃秷鎭噷锛屾悳涓嶅埌灏辩瓑浜庢病鏈夈€?
-omnihist 瑙ｅ喅鐨勪笉鏄?鍐嶅仛涓€涓亰澶╁鎴风"锛岃€屾槸**鎶婂凡缁忓彂鐢熻繃鐨勫璇濆彉鎴愪竴浠藉彲妫€绱€佸彲澶囦唤銆佸彲浜ゆ帴鐨勮祫浜?*銆?
+你现在至少有四个 AI 在同时干活。每个都记得自己那一摊，别的都不知道。
+
+- **找一个旧结论**：只记得"上周跟某个 AI 聊过缓存键怎么定"，但忘了是哪个工具、哪个项目。
+- **换工具就失忆**：在 Codex 里调通的东西，换到 Claude Code 要重新解释一遍。
+- **工具会自己删历史**：Claude Code 默认 30 天清一次，重装一次也可能清空。
+- **换电脑就归零**：会话散在十几个目录里，没有一个地方能整体拷走。
+- **决策留不下来**：真正值钱的是"当时为什么这么定"，它埋在几万条消息里，搜不到就等于没有。
+
+omnihist 解决的不是"再做一个聊天客户端"，而是**把已经发生过的对话变成一份可检索、可备份、可交接的资产**。
+
 ---
 
-## 鐜板湪鏀寔浠€涔?
-| 宸ュ叿 | 璇讳粈涔?| 骞冲彴 |
+## 现在支持什么
+
+| 工具 | 读什么 | 平台 |
 |---|---|---|
 | **Claude Code** | `~/.claude/projects/**/*.jsonl` | macOS / Linux / Windows |
-| **Codex CLI** | `~/.codex/sessions/**/rollout-*.jsonl` | 涓夊钩鍙?|
-| **opencode** | `~/.local/share/opencode/opencode.db` | 涓夊钩鍙?|
-| **WorkBuddy / CodeBuddy** | `~/.workbuddy/projects/**/*.jsonl`銆乣~/.codebuddy/projects` | 涓夊钩鍙?|
-| **Qoder / Qoder CN** | `%APPDATA%/com.qodercn.app.stable/main.sqlite` 绛?| Windows / macOS |
-| **OpenMausBot** | `~/.openmausbot/messages.db` | 涓夊钩鍙?|
-| **DeepSeek Harness / DSH Desktop** | `~/.dsh/sessions/**/session.v4.jsonl.zstd` | 涓夊钩鍙?|
+| **Codex CLI** | `~/.codex/sessions/**/rollout-*.jsonl` | 三平台 |
+| **opencode** | `~/.local/share/opencode/opencode.db` | 三平台 |
+| **WorkBuddy / CodeBuddy** | `~/.workbuddy/projects/**/*.jsonl`、`~/.codebuddy/projects` | 三平台 |
+| **Qoder / Qoder CN** | `%APPDATA%/com.qodercn.app.stable/main.sqlite` 等 | Windows / macOS |
+| **OpenMausBot** | `~/.openmausbot/messages.db` | 三平台 |
+| **DeepSeek Harness / DSH Desktop** | `~/.dsh/sessions/**/session.v4.jsonl.zstd` | 三平台 |
 | **Grok Bot** | `%APPDATA%/Grok Bot/sand-client-persistence/*.blob` | Windows / macOS |
 | **TRAE / TRAE CN / TRAE SOLO / TRAE Work** | `~/.trae-cn/memory/projects/**/session_memory_*.jsonl` | Windows / macOS |
-| **Gemini CLI** | `~/.gemini/tmp/*/chats/*.json` | 涓夊钩鍙?|
-| **OpenClaw** | `~/.openclaw/agents/*/sessions/*.jsonl` | 涓夊钩鍙?|
-| **Aider** | `~/.aider.chat.history.md` | 涓夊钩鍙?|
-| **Continue** | `~/.continue/sessions/*.json` | 涓夊钩鍙?|
-| **Goose** | `~/.local/share/goose/sessions/*.jsonl` 绛?| 涓夊钩鍙?|
-| **GitHub Copilot Chat** | VS Code `workspaceStorage/*/chatSessions/*.json` | 涓夊钩鍙?|
-| **Cline / Roo Code / Kilo Code** | VS Code `globalStorage/*/tasks/*/api_conversation_history.json` | 涓夊钩鍙?|
-| **ChatGPT 瀵煎嚭** | `conversations.json`锛圫ettings 鈫?Data controls 鈫?Export锛?| 鎵嬪姩瀵煎叆 |
-| **Claude 瀵煎嚭** | `conversations.json`锛圫ettings 鈫?Export data锛?| 鎵嬪姩瀵煎叆 |
+| **Gemini CLI** | `~/.gemini/tmp/*/chats/*.json` | 三平台 |
+| **OpenClaw** | `~/.openclaw/agents/*/sessions/*.jsonl` | 三平台 |
+| **Aider** | `~/.aider.chat.history.md` | 三平台 |
+| **Continue** | `~/.continue/sessions/*.json` | 三平台 |
+| **Goose** | `~/.local/share/goose/sessions/*.jsonl` 等 | 三平台 |
+| **GitHub Copilot Chat** | VS Code `workspaceStorage/*/chatSessions/*.json` | 三平台 |
+| **Cline / Roo Code / Kilo Code** | VS Code `globalStorage/*/tasks/*/api_conversation_history.json` | 三平台 |
+| **ChatGPT 导出** | `conversations.json`（Settings → Data controls → Export） | 手动导入 |
+| **Claude 导出** | `conversations.json`（Settings → Export data） | 手动导入 |
 
-`omnihist scan` 浼氬湪浣犵殑鏈哄櫒涓婅嚜鍔ㄦ壘杩欎簺璺緞锛屾壘涓嶅埌灏辫烦杩囥€?
-### 杩樻病鏀寔鐨勭儹闂ㄥ伐鍏?
-| 宸ュ叿 | 涓轰粈涔堣繕娌″仛 |
+`omnihist scan` 会在你的机器上自动找这些路径，找不到就跳过。
+
+### 还没支持的热门工具
+
+| 工具 | 为什么还没做 |
 |---|---|
-| **Cursor** | 鑱婂ぉ瀛樺湪 `state.vscdb` 鐨勫唴閮ㄩ敭閲岋紝鏍煎紡闅忕増鏈彉锛屽鏄撹閿?|
-| **Windsurf / Zed / Kiro / Warp** | 鍚勮嚜绉佹湁鏍煎紡锛岄渶瑕佸崟鐙€嗗悜 |
-| **TRAE 鐨勫畬鏁村璇?* | 鑱婂ぉ搴撴槸鍔犲瘑鐨勶紙`ModularData/ai-chat/database.db`锛夛紝鍙兘璇?TRAE 鑷繁鍐欑殑 session memory |
-| **JetBrains AI Assistant** | 瀛樺湪 IDE 鐨?XML/浜岃繘鍒?workspace 閲?|
-| **Antigravity** | protobuf 鏃ュ織锛岄渶瑕佸崟鐙В鐮?|
-| **GitHub Copilot CLI** | 鏃ュ織鏍煎紡鏈ǔ瀹?|
-| **Qwen Code / Kimi Code / Amp / Devin / Factory / OpenHands / Jules** | 绀惧尯閫傞厤鍣ㄥ彲鍔狅紝浣嗚繕娌″啓 |
-| **ChatGPT / Claude / Gemini 缃戦〉鐗堝疄鏃舵姄鍙?* | 闇€瑕佹祻瑙堝櫒鎵╁睍锛涚洰鍓嶅彧鏀寔瀵煎嚭鏂囦欢锛圙emini 瀵煎嚭涔熻繕娌¤В鏋愶級 |
-| **Codex 鐨?`.jsonl.zst` 褰掓。** | 闇€瑕?zstd 瑙ｅ帇锛屽綋鍓嶈烦杩?|
-| **浜?agent锛圕odex cloud銆丣ules銆丏evin cloud锛?* | 闇€瑕佸悇瀹?API锛屼笉鍦ㄦ湰鍦版枃浠堕噷 |
+| **Cursor** | 聊天存在 `state.vscdb` 的内部键里，格式随版本变，容易读错 |
+| **Windsurf / Zed / Kiro / Warp** | 各自私有格式，需要单独逆向 |
+| **TRAE 的完整对话** | 聊天库是加密的（`ModularData/ai-chat/database.db`），只能读 TRAE 自己写的 session memory |
+| **JetBrains AI Assistant** | 存在 IDE 的 XML/二进制 workspace 里 |
+| **Antigravity** | protobuf 日志，需要单独解码 |
+| **GitHub Copilot CLI** | 日志格式未稳定 |
+| **Qwen Code / Kimi Code / Amp / Devin / Factory / OpenHands / Jules** | 社区适配器可加，但还没写 |
+| **ChatGPT / Claude / Gemini 网页版实时抓取** | 需要浏览器扩展；目前只支持导出文件（Gemini 导出也还没解析） |
+| **Codex 的 `.jsonl.zst` 归档** | 需要 zstd 解压，当前跳过 |
+| **云 agent（Codex cloud、Jules、Devin cloud）** | 需要各家 API，不在本地文件里 |
 
-杩欏紶琛ㄥ氨鏄?roadmap銆傛瘡鍔犱竴涓紝鍙渶瑕佷竴涓?`src/adapters/xxx.mjs`銆?
+这张表就是 roadmap。每加一个，只需要一个 `src/adapters/xxx.mjs`。
+
 ---
 
-## 瀹夎
+## 安装
 
-闇€瑕?**Node.js 22.5+**锛堢敤鍒板唴缃殑 `node:sqlite`锛岄浂绗笁鏂逛緷璧栵級銆?
+需要 **Node.js 22.5+**（用到内置的 `node:sqlite`，零第三方依赖）。
+
 ```bash
-# 浠?npm锛堝彂甯冨悗锛?npm install -g omnihist
+# 从 npm（发布后）
+npm install -g omnihist
 
-# 鎴栬€呯洿鎺ヤ粠 GitHub
+# 或者直接从 GitHub
 npm install -g github:ysyluminous/omnihist
 
-# 鎴栬€呭厠闅嗗悗鏈湴閾炬帴
+# 或者克隆后本地链接
 git clone https://github.com/ysyluminous/omnihist.git
 cd omnihist
 npm link
 ```
 
-妫€鏌ワ細
+检查：
 
 ```bash
 omnihist scan
 ```
 
-浼氬垪鍑鸿繖鍙版満鍣ㄤ笂妫€娴嬪埌浜嗗摢浜涘伐鍏枫€佸垎鍒鍝釜璺緞銆?
+会列出这台机器上检测到了哪些工具、分别读哪个路径。
+
 ---
 
-## 浣跨敤
+## 使用
 
-### 1. 鍚屾
+### 1. 同步
 
 ```bash
 omnihist sync
 ```
 
-绗竴娆′細鎶婅兘璇诲埌鐨勫巻鍙插叏閮ㄥ鍏ワ紱涔嬪悗鍐嶈窇鍙鏂板鍜屽彉鍖栫殑閮ㄥ垎锛堟瘡涓簮璁颁竴涓父鏍囷級銆?
+第一次会把能读到的历史全部导入；之后再跑只读新增和变化的部分（每个源记一个游标）。
+
 ```bash
-omnihist sync --source workbuddy     # 鍙悓姝ヤ竴涓伐鍏?omnihist sync --full                 # 蹇界暐娓告爣锛屽叏閮ㄩ噸鎵紙骞傜瓑锛屼笉浼氶噸澶嶏級
+omnihist sync --source workbuddy     # 只同步一个工具
+omnihist sync --full                 # 忽略游标，全部重扫（幂等，不会重复）
 ```
 
-### 2. 鎼滅储
+### 2. 搜索
 
 ```bash
-omnihist search "缂撳瓨閿?
+omnihist search "缓存键"
 omnihist search "connection pool exhausted" --limit 10
 ```
 
-杈撳嚭浼氬甫鏉ユ簮銆佹椂闂淬€佹爣棰樸€佸懡涓墖娈靛拰浼氳瘽 id銆備腑鏂囨寜瀛楀垏鍒嗭紝涓や釜瀛椾篃鑳芥悳銆?
-### 3. 鐪嬩竴鏉″璇?
+输出会带来源、时间、标题、命中片段和会话 id。中文按字切分，两个字也能搜。
+
+### 3. 看一条对话
+
 ```bash
 omnihist list --limit 20
 omnihist show <conversation-id>
 omnihist export <conversation-id> --format md --out ./one.md
 ```
 
-### 4. 缁熻
+### 4. 统计
 
 ```bash
 omnihist stats
 ```
 
-### 5. 瀵煎叆瀹樻柟瀵煎嚭
+### 5. 导入官方导出
 
 ```bash
 omnihist import ~/Downloads/chatgpt-export
 omnihist import ~/Downloads/claude-export/conversations.json
 ```
 
-### 6. 璁?AI 鑷繁鏌ワ紙MCP锛?
-omnihist 鑷甫涓€涓?stdio MCP server锛屾毚闇蹭笁涓伐鍏凤細
+### 6. 让 AI 自己查（MCP）
 
-- `search_conversations` 鈥?璺ㄦ墍鏈夊伐鍏锋悳绱?- `get_conversation` 鈥?璇讳竴鏁存潯瀵硅瘽
-- `list_recent` 鈥?鏈€杩戜細璇?
-Claude Code锛?
+omnihist 自带一个 stdio MCP server，暴露三个工具：
+
+- `search_conversations` — 跨所有工具搜索
+- `get_conversation` — 读一整条对话
+- `list_recent` — 最近会话
+
+Claude Code：
+
 ```bash
 claude mcp add omnihist -- omnihist mcp
 ```
 
-opencode / 鍏朵粬 MCP 瀹㈡埛绔紙`mcp.json`锛夛細
+opencode / 其他 MCP 客户端（`mcp.json`）：
 
 ```json
 {
@@ -147,17 +175,28 @@ opencode / 鍏朵粬 MCP 瀹㈡埛绔紙`mcp.json`锛夛細
 }
 ```
 
-涔嬪悗鐩存帴闂?agent锛?鎴戜滑涔嬪墠鍏充簬缂撳瓨閿槸鎬庝箞瀹氱殑锛? 瀹冧細鑷繁鎼滃埌 Codex 鎴?Claude Code 閲岀殑閭ｆ潯瀵硅瘽銆?
+之后直接问 agent："我们之前关于缓存键是怎么定的？" 它会自己搜到 Codex 或 Claude Code 里的那条对话。
+
 ---
 
-## 瀹冩槸鎬庝箞鍋氱殑
+## 它是怎么做的
 
-- **鍙婧愭枃浠躲€?* 涓嶅啓鍥炰换浣曞伐鍏凤紝涓嶆敼浣犵殑閰嶇疆銆?- **涓€涓?SQLite 鏂囦欢銆?* 榛樿 `~/.omnihist/omnihist.db`锛屾嫹璧板氨鏄叏閮ㄣ€?- **澧為噺銆?* `sync_state` 璁版瘡涓簮鐨勬渶鍚庢椂闂达紱閲嶅璺戞槸骞傜瓑鐨勩€?- **鍘婚噸銆?* 姣忔潯娑堟伅绠?sha256锛涘悓涓€娈靛唴瀹瑰湪搴撻噷鍙湁涓€浠界储寮曪紝閲嶅瀵煎叆涓嶄細鑶ㄨ儉銆?- **涓枃鍙悳銆?* FTS5 + 鎸夊瓧鍒囧垎锛屼笉渚濊禆鍒嗚瘝鏈嶅姟銆?- **榛樿鑴辨晱銆?* 甯歌鐨?`sk-`銆乣ghp_`銆乣AKIA`銆丅earer token銆乸assword 瀛楁鍦ㄥ叆搴撳墠鏇挎崲鎴?`***`锛涜淇濈暀鍘熸枃鐢?`OMNIHIST_REDACT=0`銆?- **鍗曟潯娑堟伅涓婇檺 20 涓囧瓧绗?*锛岄伩鍏嶄竴鏉¤秴闀垮伐鍏疯緭鍑烘妸搴撴拺鐖嗭紱鍙敤 `OMNIHIST_MAX_CHARS` 璋冩暣銆?
-鏁版嵁搴撳ぇ姒傚澶э紵鏈満 7 涓囨潯娑堟伅锛堝惈澶ч噺宸ュ叿杈撳嚭锛夌害 700MB銆傜函鑱婂ぉ浼氬皬寰堝銆?
+- **只读源文件。** 不写回任何工具，不改你的配置。
+- **一个 SQLite 文件。** 默认 `~/.omnihist/omnihist.db`，拷走就是全部。
+- **增量。** `sync_state` 记每个源的最后时间；重复跑是幂等的。
+- **去重。** 每条消息算 sha256；同一段内容在库里只有一份索引，重复导入不会膨胀。
+- **中文可搜。** FTS5 + 按字切分，不依赖分词服务。
+- **默认脱敏。** 常见的 `sk-`、`ghp_`、`AKIA`、Bearer token、password 字段在入库前替换成 `***`；要保留原文用 `OMNIHIST_REDACT=0`。
+- **单条消息上限 20 万字符**，避免一条超长工具输出把库撑爆；可用 `OMNIHIST_MAX_CHARS` 调整。
+
+数据库大概多大？本机 7 万条消息（含大量工具输出）约 700MB。纯聊天会小很多。
+
 ---
 
-## 鑷繁鍔犱竴涓€傞厤鍣?
-鍦?`src/adapters/` 鏂板缓涓€涓枃浠讹紝瀵煎嚭 `id`銆乣name`銆乣detect()`銆乣scan()`锛?
+## 自己加一个适配器
+
+在 `src/adapters/` 新建一个文件，导出 `id`、`name`、`detect()`、`scan()`：
+
 ```js
 import path from 'node:path';
 import { HOME, exists, walk, jsonl, textOf, titleFrom, toMs } from '../util.mjs';
@@ -188,28 +227,41 @@ export async function scan({ since = 0 } = {}) {
 }
 ```
 
-鐒跺悗鍦?`src/adapters/index.mjs` 閲屽姞涓€琛?import 鍜屾暟缁勯」銆俙detect()` 杩斿洖绌烘暟缁勫氨绛変簬"杩欏彴鏈哄櫒娌¤"銆?
+然后在 `src/adapters/index.mjs` 里加一行 import 和数组项。`detect()` 返回空数组就等于"这台机器没装"。
+
 ---
 
-## 闅愮
+## 隐私
 
-- 鍏ㄩ儴鏁版嵁鍙湪鏈満锛屾病鏈夐仴娴嬨€佹病鏈変笂浼犮€佹病鏈夎处鍙枫€?- `omnihist` 涓嶄細淇敼浠讳綍婧愭枃浠躲€?- 榛樿鑴辨晱甯歌瀵嗛挜锛涗絾鍘嗗彶閲屽彲鑳借繕鏈夊埆鐨勬晱鎰熷唴瀹癸紝**杩欎釜搴撹鍍忚亰澶╄褰曟湰韬竴鏍蜂繚鎶?*銆?- 鎯冲悓姝ュ埌鍒殑鏈哄櫒锛氱洿鎺ユ嫹 `~/.omnihist/omnihist.db`锛堝厛鍋滄帀姝ｅ湪璺戠殑 sync锛夛紝鎴栬€呮斁杩涗綘鑷繁鐨勭鏈夌綉鐩樸€?
+- 全部数据只在本机，没有遥测、没有上传、没有账号。
+- `omnihist` 不会修改任何源文件。
+- 默认脱敏常见密钥；但历史里可能还有别的敏感内容，**这个库要像聊天记录本身一样保护**。
+- 想同步到别的机器：直接拷 `~/.omnihist/omnihist.db`（先停掉正在跑的 sync），或者放进你自己的私有网盘。
+
 ---
 
-## 鍜屽埆鐨勫伐鍏蜂粈涔堝叧绯?
-- **hstry / deja-vu / cass / Hansard** 閮藉緢寮猴紝鎬濊矾涓€鑷达細璇诲凡鏈変細璇濓紝鍋氫竴涓粺涓€绱㈠紩銆俹mnihist 鐨勫樊鍒槸锛氶浂渚濊禆銆佸崟鏂囦欢銆侀粯璁よ劚鏁忋€佷腑鏂囨寜瀛楁绱€侀€傞厤鍣?30 琛屼竴涓紝骞朵笖鍚屾椂瑕嗙洊 WorkBuddy + Qoder + OpenMausBot 杩欑被鍥藉唴/鑷缓宸ュ叿銆?- 瀹冧笉鏄亰澶╁鎴风锛屼笉鏇夸綘鍙戞秷鎭紝涓嶆帴绠′换浣曞伐鍏枫€?- 瀹冧篃涓嶆槸"璁板繂灞?锛堜笉鎶藉彇浜嬪疄銆佷笉鍋氬悜閲忓簱锛夈€傚畠鍏堟妸**鍘熷瀵硅瘽**鏀堕綈锛涙娊鍙栧拰鎬荤粨鍙互鍦ㄨ繖涓簱涔嬩笂鍋氥€?
+## 和别的工具什么关系
+
+- **hstry / deja-vu / cass / Hansard** 都很强，思路一致：读已有会话，做一个统一索引。omnihist 的差别是：零依赖、单文件、默认脱敏、中文按字检索、适配器 30 行一个，并且同时覆盖 WorkBuddy + Qoder + OpenMausBot 这类国内/自建工具。
+- 它不是聊天客户端，不替你发消息，不接管任何工具。
+- 它也不是"记忆层"（不抽取事实、不做向量库）。它先把**原始对话**收齐；抽取和总结可以在这个库之上做。
+
 ---
 
 ## Roadmap
 
-- [ ] Cursor / Windsurf / Zed / Kiro / TRAE 閫傞厤鍣?- [ ] Gemini Takeout 瀵煎嚭
-- [ ] 娴忚鍣ㄦ墿灞曪紝瀹炴椂鏀?ChatGPT / Claude / Gemini 缃戦〉瀵硅瘽
-- [ ] 鍙€夌殑璇箟妫€绱紙鏈湴 embedding锛?- [ ] `omnihist serve` 鏈湴 Web UI
-- [ ] 鍔犲瘑搴擄紙SQLCipher 鎴栧簲鐢ㄥ眰锛?- [ ] 鍐崇瓥/寰呭姙鎶藉彇锛岃緭鍑?Markdown
+- [ ] Cursor / Windsurf / Zed / Kiro / Warp 适配器
+- [ ] Gemini Takeout 导出
+- [ ] 浏览器扩展，实时收 ChatGPT / Claude / Gemini 网页对话
+- [ ] 可选的语义检索（本地 embedding）
+- [ ] `omnihist serve` 本地 Web UI
+- [ ] 加密库（SQLCipher 或应用层）
+- [ ] 决策/待办抽取，输出 Markdown
 
 ---
 
 ## License
 
-MIT銆傝 [LICENSE](LICENSE)銆?
-鍋氳繖涓」鐩椂鍙傝€冧簡 hstry銆乨eja-vu銆乧ass銆丠ansard銆丳omnia 鐨勫叕寮€鏂囨。鍜岄€傞厤鍣ㄦ€濊矾锛屼唬鐮佷负鐙珛瀹炵幇銆?
+MIT。见 [LICENSE](LICENSE)。
+
+做这个项目时参考了 hstry、deja-vu、cass、Hansard、Pomnia 的公开文档和适配器思路，代码为独立实现。

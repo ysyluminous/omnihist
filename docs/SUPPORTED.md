@@ -12,7 +12,7 @@
 | `mausbot` | OpenMausBot | `~/.openmausbot/messages.db` | only messages with text; activity rows are skipped |
 | `dsh` | DeepSeek Harness / DSH Desktop | `~/.dsh/sessions/**/session.v4.jsonl.zstd` | multi-frame zstd; decodes every appended frame |
 | `grokbot` | Grok Bot | `%APPDATA%/Grok Bot/sand-client-persistence/*.blob` | JSON entries (`send-message`, `message`) |
-| `trae` | TRAE / TRAE CN / TRAE SOLO / TRAE Work | `~/.trae-cn/memory/projects/**/session_memory_*.jsonl`, `~/.trae/memory/...` | full chat DB is encrypted; reads TRAE session memory (intent/actions/outcome/learned) |
+| `trae` | TRAE / TRAE CN / TRAE SOLO / TRAE Work | `~/.trae-cn/memory/projects/**/session_memory_*.jsonl` | full chat DB is encrypted; reads TRAE session memory |
 | `gemini-cli` | Gemini CLI | `~/.gemini/tmp/*/chats/*.json` | JSON session files |
 | `openclaw` | OpenClaw | `~/.openclaw/agents/*/sessions/*.jsonl` | `message` records |
 | `aider` | Aider | `~/.aider.chat.history.md` | Markdown history; project-level files are roadmap |
