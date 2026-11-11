@@ -1,0 +1,8 @@
+node_modules/
+.omnihist/
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+Thumbs.db
+test/tmp/
