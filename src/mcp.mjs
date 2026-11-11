@@ -1,4 +1,4 @@
-import readline from 'node:readline';
+﻿import readline from 'node:readline';
 import { search, getConversation, listConversations } from './db.mjs';
 
 const TOOLS = [
@@ -59,7 +59,7 @@ async function dispatch(db, msg) {
       return {
         protocolVersion: msg.params?.protocolVersion || '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'omnihist', version: '0.1.0' },
+        serverInfo: { name: 'omnihist', version: '0.1.1' },
       };
     case 'ping':
       return {};
@@ -84,7 +84,7 @@ function callTool(db, name, args) {
     const got = getConversation(db, args.id);
     if (!got) return { content: [{ type: 'text', text: 'Conversation not found.' }], isError: true };
     const c = got.conversation;
-    const text = `# ${c.title || '(untitled)'}\n${c.source} · ${c.id}\n\n` +
+    const text = `# ${c.title || '(untitled)'}\n${c.source} 路 ${c.id}\n\n` +
       got.messages.map((m) => `## ${m.role || '?'}\n${m.text || ''}`).join('\n\n');
     return { content: [{ type: 'text', text: text.slice(0, 120000) }] };
   }

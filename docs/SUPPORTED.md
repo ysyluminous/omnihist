@@ -10,6 +10,9 @@
 | `workbuddy` | WorkBuddy / CodeBuddy | `~/.workbuddy/projects/**/*.jsonl`, `~/.codebuddy/projects/**/*.jsonl` | message + reasoning records |
 | `qoder` | Qoder / Qoder CN | `%APPDATA%/com.qodercn.app.stable/main.sqlite`, `%APPDATA%/com.qoder.app.stable/main.sqlite` | handles both schemas (with/without `role`) |
 | `mausbot` | OpenMausBot | `~/.openmausbot/messages.db` | only messages with text; activity rows are skipped |
+| `dsh` | DeepSeek Harness / DSH Desktop | `~/.dsh/sessions/**/session.v4.jsonl.zstd` | multi-frame zstd; decodes every appended frame |
+| `grokbot` | Grok Bot | `%APPDATA%/Grok Bot/sand-client-persistence/*.blob` | JSON entries (`send-message`, `message`) |
+| `trae` | TRAE / TRAE CN / TRAE SOLO / TRAE Work | `~/.trae-cn/memory/projects/**/session_memory_*.jsonl`, `~/.trae/memory/...` | full chat DB is encrypted; reads TRAE session memory (intent/actions/outcome/learned) |
 | `gemini-cli` | Gemini CLI | `~/.gemini/tmp/*/chats/*.json` | JSON session files |
 | `openclaw` | OpenClaw | `~/.openclaw/agents/*/sessions/*.jsonl` | `message` records |
 | `aider` | Aider | `~/.aider.chat.history.md` | Markdown history; project-level files are roadmap |
@@ -33,11 +36,15 @@
 | `copilot-chat` | 19 | 92 |
 | `gemini-cli` | 1 | 11 |
 | `openclaw` | 1 | 1 |
+| `dsh` | 2 | 314 |
+| `grokbot` | 6 | 55 |
+| `trae` | 46 | 1,636 |
 
 ## Not supported yet
 
 - **Cursor** — chat lives inside `state.vscdb` under version-specific keys.
-- **Windsurf, Zed, Kiro, TRAE, Warp** — private formats.
+- **Windsurf, Zed, Kiro, Warp** — private formats.
+- **TRAE full chat** — the chat database is encrypted; only TRAE's own session memory is readable.
 - **JetBrains AI Assistant** — IDE workspace XML/binary.
 - **Antigravity** — protobuf logs.
 - **GitHub Copilot CLI** — log format not stable.

@@ -1,6 +1,6 @@
-{
+﻿{
   "name": "omnihist",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "One searchable history for every AI tool: coding agents, chat apps and personal assistants.",
   "type": "module",
   "bin": {
